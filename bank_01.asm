@@ -82,7 +82,7 @@ SpawnSpriteSkidSmoke:
     STA.B _0
     LDA.B #$0A
     STA.B _1
-CODE_018063:
+SpawnSmokeAtSpriteOffset:
     JSR IsSprOffScreen
     BNE Return018072
     LDY.B #$03
@@ -11833,7 +11833,7 @@ LineRope_Chainsaw:
     STA.B _0
     LDA.B #$F2
     STA.B _1
-    JSR CODE_018063
+    JSR SpawnSmokeAtSpriteOffset
 LineGrinder:
     LDA.B TrueFrame
     AND.B #$07
