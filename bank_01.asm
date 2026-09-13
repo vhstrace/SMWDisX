@@ -71,7 +71,7 @@ InvertAccum:
     INC A                                     ; /
     RTS
 
-SpawnSkidSmoke:
+SpawnSpriteSkidSmoke:
     LDA.W SpriteBlockedDirs,X                 ; \ Branch if in air
     BEQ Return018072                          ; /
     LDA.B TrueFrame
@@ -1504,7 +1504,7 @@ CODE_0189B4:
   + SEC
     SBC.B _0
     STA.B SpriteXSpeed,X
-    JSR SpawnSkidSmoke
+    JSR SpawnSpriteSkidSmoke
 CODE_0189E6:
     STZ.W SpriteMisc1570,X
     JSR CODE_018B43
@@ -1567,7 +1567,7 @@ CODE_018A29:
     SBC.B _0
     STA.W SpriteXSpeed,Y
     STA.B SpriteXSpeed,X
-    JSR SpawnSkidSmoke
+    JSR SpawnSpriteSkidSmoke
 CODE_018A62:
     STZ.W SpriteMisc1570,X
     JSR CODE_018B43
@@ -13460,7 +13460,7 @@ CODE_01E393:
     ROR A
     EOR.B SpriteXSpeed,X
     BPL +
-    JSR SpawnSkidSmoke
+    JSR SpawnSpriteSkidSmoke
     JSR SetAnimationFrame
   + RTS
 
