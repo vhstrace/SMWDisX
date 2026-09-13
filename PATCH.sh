@@ -1,14 +1,15 @@
 #!/bin/bash
 echo Assembling...
-rm -f smw.smc
-./asar smw.asm smw.smc || exit
+for ver in J U SS E0 E1; do
+	./asar -wno1009 -wno1018 --fix-checksum=off --symbols=nocash --define _VER="!__VER_$ver" smw.asm SMW_$ver.smc || exit
+done
 echo Assembly complete!
 
-cmp --silent comparison_J.smc smw.smc && echo "J version match!"
-cmp --silent comparison_U.smc smw.smc && echo "U version match!"
-cmp --silent comparison_E0.smc smw.smc && echo "E0 version match!"
-cmp --silent comparison_E1.smc smw.smc && echo "E1 version match!"
-cmp --silent comparison_E0_f.smc smw.smc && echo "E0 version temporary match!"
-cmp --silent comparison_E1_f.smc smw.smc && echo "E1 version temporary match!"
-
-exit 0 # reset exit code from last cmp
+for ver in J U SS E0 E1; do
+	[ -f comparison_$ver.smc ] || continue
+	if cmp --silent comparison_$ver.smc SMW_$ver.smc; then
+		echo "$ver version match!"
+	else
+		echo "$ver version MISMATCH!"
+	fi
+done
