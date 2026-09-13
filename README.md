@@ -7,7 +7,7 @@ You'll need the assembler, Asar v1.91 (you can find it [here](https://www.smwcen
 1. Click the big green "Clone or download" button and select zip file.
 2. Unzip that somewhere, and stick asar.exe in the folder with PATCH.bat.
 3. Run the bat file. It assembles every version of the game, and the assembled ROMs will be called "SMW_J.smc", etc.
-4. If you provide a ROM of each version of the game and call them "comparison_J.smc", etc., the batch file will also check the assembled ROM to see if it matches any exactly.
+4. If you provide a ROM of each version of the game and call them "comparison_J.smc", etc., the batch file will also check each assembled ROM to see if it exactly matches that comparison ROM.
 
 On Linux, steps are the same but use asar instead of asar.exe and PATCH.sh instead of PATCH.bat.
 
