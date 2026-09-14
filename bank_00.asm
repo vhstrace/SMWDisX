@@ -9947,7 +9947,7 @@ CODE_00D61E:
     BEQ +
     LDA.B LevelIsSlippery
     BNE +
-    JSR CODE_00FE4A
+    JSR SpawnPlayerSkidSmoke
   + JMP CODE_00D764
 
 CODE_00D630:
@@ -10002,7 +10002,7 @@ CODE_00D68D:
     LDA.W PlayerSlopePose
     BEQ +
 CODE_00D692:
-    JSR CODE_00FE4A
+    JSR SpawnPlayerSkidSmoke
     LDA.W CurrentSlope
     BEQ +
     JSR CODE_00D968
@@ -10068,7 +10068,7 @@ CODE_00D6EC:
     BNE +
     LDA.B #$0D
     STA.W PlayerTurningPose
-    JSR CODE_00FE4A
+    JSR SpawnPlayerSkidSmoke
   + TXA
     CLC
     ADC.B #$90
@@ -14627,7 +14627,7 @@ CODE_00FE16:
     STA.W ExtSpriteMisc176F,Y
     JMP CODE_00FE0A
 
-CODE_00FE4A:
+SpawnPlayerSkidSmoke:
     LDA.B TrueFrame
     AND.B #$03
     ORA.B PlayerInAir
@@ -14647,13 +14647,13 @@ CODE_00FE67:
     LDY.B #$03
 CODE_00FE69:
     LDA.W SmokeSpriteNumber,Y
-    BEQ CODE_00FE72
+    BEQ SetPlayerSmoke
     DEY
     BNE CODE_00FE69
 Return00FE71:
     RTS
 
-CODE_00FE72:
+SetPlayerSmoke:
     LDA.B #$03
     STA.W SmokeSpriteNumber,Y
     LDA.B PlayerXPosNext
