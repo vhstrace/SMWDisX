@@ -88,13 +88,13 @@ SpawnSmokeAtSpriteOffset:
     LDY.B #$03
 CODE_01806A:
     LDA.W SmokeSpriteNumber,Y
-    BEQ CODE_018073
+    BEQ SetSpriteSmoke
     DEY
     BPL CODE_01806A
 Return018072:
     RTS
 
-CODE_018073:
+SetSpriteSmoke:
     LDA.B #$03
     STA.W SmokeSpriteNumber,Y
     LDA.B SpriteXPosLow,X
