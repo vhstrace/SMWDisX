@@ -14628,21 +14628,21 @@ CODE_00FE16:
     JMP CODE_00FE0A
 
 SpawnPlayerSkidSmoke:
-    LDA.B TrueFrame
-    AND.B #$03
-    ORA.B PlayerInAir
-    ORA.B PlayerXPosScrRel+1
-    ORA.B PlayerYPosScrRel+1
-    ORA.B SpriteLock
-    BNE Return00FE71
-    LDA.B byetudlrHold
-    AND.B #$04
-    BEQ CODE_00FE67
-    LDA.B PlayerXSpeed+1
-    CLC
-    ADC.B #$08
-    CMP.B #$10
-    BCC Return00FE71
+    LDA.B TrueFrame                           ;\ Only every 4th frame, and not if in the
+    AND.B #$03                                ;| air, offscreen, or frozen
+    ORA.B PlayerInAir                         ;|
+    ORA.B PlayerXPosScrRel+1                  ;|
+    ORA.B PlayerYPosScrRel+1                  ;|
+    ORA.B SpriteLock                          ;|
+    BNE Return00FE71                          ;/
+    LDA.B byetudlrHold                        ;\ If holding down, need an X speed of
+    AND.B #$04                                ;| at least $08 left or right
+    BEQ CODE_00FE67                           ;|
+    LDA.B PlayerXSpeed+1                      ;|
+    CLC                                       ;|
+    ADC.B #$08                                ;|
+    CMP.B #$10                                ;|
+    BCC Return00FE71                          ;/
 CODE_00FE67:
     LDY.B #$03
 CODE_00FE69:
@@ -14657,14 +14657,14 @@ SetPlayerSmoke:
     LDA.B #$03
     STA.W SmokeSpriteNumber,Y
     LDA.B PlayerXPosNext
-    ADC.B #$04
+    ADC.B #$04                                ; carry isn't cleared first
     STA.W SmokeSpriteXPos,Y
     LDA.B PlayerYPosNext
     ADC.B #$1A
     PHX
-    LDX.W PlayerRidingYoshi
-    BEQ +
-    ADC.B #$10
+    LDX.W PlayerRidingYoshi                   ;\ $10 lower when riding Yoshi
+    BEQ +                                     ;|
+    ADC.B #$10                                ;/
   + STA.W SmokeSpriteYPos,Y
     PLX
     LDA.B #$13
