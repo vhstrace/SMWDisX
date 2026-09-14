@@ -74,14 +74,14 @@ InvertAccum:
 SpawnSpriteSkidSmoke:
     LDA.W SpriteBlockedDirs,X                 ; \ Branch if in air
     BEQ Return018072                          ; /
-    LDA.B TrueFrame
-    AND.B #$03
-    ORA.B LevelIsSlippery
-    BNE Return018072
-    LDA.B #$04
-    STA.B _0
-    LDA.B #$0A
-    STA.B _1
+    LDA.B TrueFrame                           ; \ Return if not every 4th frame
+    AND.B #$03                                ; | or level is slippery
+    ORA.B LevelIsSlippery                     ; |
+    BNE Return018072                          ; /
+    LDA.B #$04                                ; \ Smoke offset from sprite
+    STA.B _0                                  ; | x = #$04, y = #$0A
+    LDA.B #$0A                                ; |
+    STA.B _1                                  ; /
 SpawnSmokeAtSpriteOffset:
     JSR IsSprOffScreen
     BNE Return018072
