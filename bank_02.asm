@@ -1402,7 +1402,7 @@ CODE_028AF5:
   + JSR CODE_028B67
     JSR CODE_02902D
     JSR ScoreSprGfx
-    JSR CODE_029B0A
+    JSR ProcessExtSprites
     JSR CODE_0299D2
     JSR CODE_02B387
     JSR CallGenerator
@@ -2540,7 +2540,9 @@ CODE_029398:
     BCS Return029391
     LDY.W MinorSpriteProcIndex
     STZ.B _E
-CODE_0293AE:
+; Hit every sprite touching a quake sprite (_E = 0)
+; or the swinging cape (_E = CapeInteracts)
+QuakeCapeHitSprites:
     LDX.B #$0B
 CODE_0293B0:
     STX.W CurSpriteProcess
@@ -2709,7 +2711,7 @@ CODE_0294F5:
     LDA.B TrueFrame
     LSR A
     BCC +
-    JSR CODE_0293AE
+    JSR QuakeCapeHitSprites
     JSR CODE_029631
   + JSR CODE_02950B
 Return02950A:
@@ -3528,16 +3530,16 @@ CODE_029AE5:
     STA.W SmokeSpriteTimer,Y                  ; duration = 10
     RTS
 
-CODE_029B0A:
+ProcessExtSprites:
     LDX.B #$09
   - STX.W CurSpriteProcess
-    JSR CODE_029B16
+    JSR HandleExtSprite
     DEX
     BPL -
 Return029B15:
     RTS
 
-CODE_029B16:
+HandleExtSprite:
     LDA.W ExtSpriteNumber,X
     BEQ Return029B15
     LDY.B SpriteLock
