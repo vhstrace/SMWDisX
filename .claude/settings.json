@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ \"$CLAUDE_CODE_REMOTE\" = \"true\" ]; then git -C \"$CLAUDE_PROJECT_DIR\" config core.hooksPath cheats/githooks; [ -f \"$CLAUDE_PROJECT_DIR/build/SMW_U.smc\" ] || \"$CLAUDE_PROJECT_DIR/cheats/cloud_build.sh\"; fi",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

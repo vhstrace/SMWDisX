@@ -1,0 +1,16 @@
+#!/bin/sh
+# Cloud sessions may commit only files in cheats/. Game Genie work never
+# changes the disassembly (see .claude/CLAUDE.md).
+# Also refuse anything that looks like a ROM.
+
+bad=$(git diff --cached --name-only --diff-filter=ACMRD | grep -v '^cheats/')
+rom=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '\.(smc|sfc|swc|fig|bin)$')
+
+if [ -n "$bad" ] || [ -n "$rom" ]
+then
+	echo "pre-commit: only files in cheats/ may be committed, and no ROMs." >&2
+	[ -n "$bad" ] && echo "Outside cheats/:" >&2 && echo "$bad" | sed 's/^/  /' >&2
+	[ -n "$rom" ] && echo "ROM-like files:" >&2 && echo "$rom" | sed 's/^/  /' >&2
+	echo "Undo changes to the disassembly with git checkout; codes never need them." >&2
+	exit 1
+fi
