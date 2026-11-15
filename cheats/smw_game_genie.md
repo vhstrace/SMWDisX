@@ -25507,13 +25507,13 @@ addresses. Not checked further.
   nothing.
 
 
-## Every level starts with 200 less time (400 to 200, 300 to 100)
+## Every level starts with 200 less time (400 to 200, 300 to 100, 200 to none)
 
-**Codes:** `DF62-D4F9` + `DF62-D499` + `D462-D4B9` (use all three)
-**Raw form:** `0584D8:01` (orig `$02`); `0584D9:01` (orig `$03`); `0584DA:02` (orig `$04`)
+**Codes:** `FE66-0FF9` + `AC66-0F99` (use both)
+**Raw form:** `058584:1F` (orig `$D7`); `058585:CA` (orig `$84`)
 (address:new-byte — the original byte is documentation, not part of the code;
 SNES Game Genie has no compare byte)
-**Optional, 2 codes, but levels that start with 200 get no time limit:** `FE66-0FF9` + `AC66-0F99` (`058584:1F` + `058585:CA`)
+**Optional, instead, 3 codes that give levels with 200 a time of 100:** `DF62-D4F9` + `DF62-D499` + `D462-D4B9` (`0584D8:01` + `0584D9:01` + `0584DA:02`)
 **Recorded:** 2026-11-15 12:45:07
 
 **Mechanism:** The level loader (`bank_05.asm`) sets the hundreds digit of
@@ -25531,23 +25531,22 @@ TimerTable:
     STA.W InGameTimerHundreds                 ; |
 ```
 
-The codes change the table to `$00,$01,$01,$02`. Levels with 400 get 200,
-and levels with 300 get 100. Levels with 200 can't lose 200: a timer of
-000 never counts down (`UpdateStatusBar` skips the countdown when the
-timer is already zero), so those levels would have no time limit at all.
-The codes give them 100 instead. Index 0 stays `$00`, so levels without a
-timer (such as Yoshi's House) still have none.
+The codes change the `LDA.L` operand from `$05:84D7` to `$05:CA1F`, which
+already holds `00 00 01 02`. Levels with 400 get 200, and levels with 300
+get 100. Levels with 200 get 000. A timer of 000 never counts down
+(`UpdateStatusBar` skips the countdown when the timer is already zero), so
+those levels have no time limit, like Yoshi's House. Index 0 still reads
+`$00`, so levels without a timer still have none.
 
-The optional codes instead change the `LDA.L` operand from `$05:84D7` to
-`$05:CA1F`, which already holds `00 00 01 02`. That takes 400 and 300
-down by 200 too, but levels with 200 get 000 and no time limit.
+The optional codes change `TimerTable` itself to `$00,$01,$01,$02`
+instead, so levels with 200 get 100 and keep a time limit.
 
 **Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has
-`00 02 03 04` at `$0584D7` (`TimerTable`), `BF D7 84 05` at `$058583`, and
+`BF D7 84 05` at `$058583`, `00 02 03 04` at `$0584D7` (`TimerTable`), and
 `00 00 01 02` at `$05CA1F`. Read and encoded with `cheats/tools/sgg.py`.
-`TimerTable` is read only by this `LDA.L`. No `00 01 01 02` exists where
-2 or fewer operand bytes would need to change, so the main version needs
-3 codes either way.
+`TimerTable` is read only by this `LDA.L`. No `00 00 01 02` (or any
+`?? 00 01 02`) exists where only one operand byte would need to change, so
+1 code is not possible this way.
 
 **Revisions:** U only. Others not checked.
 
@@ -25558,8 +25557,8 @@ down by 200 too, but levels with 200 get 000 and no time limit.
   (`SublevelCount` = 0), as before. Pipes and doors keep the time left.
 - One count is 41 frames, so 100 is about 68 seconds and 200 about 2
   minutes 15 seconds. Long 300 levels may not be possible in time.
-- Levels with 200 (the switch palaces and some others) get 100, so they
-  lose only 100. With the optional codes they have no time limit.
-- "Level timer values (200 -> 900 starting time)" writes `$0584D8`, the
-  same address as the first code, so use only one of them. With the
-  optional codes, it does nothing.
+- Levels with 200 (the switch palaces and some others) show 000 and have
+  no time limit. The optional codes give them 100 instead.
+- "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`,
+  which the main codes no longer read, so with them it does nothing. The
+  optional codes write the same address (`$0584D8`), so use only one.
