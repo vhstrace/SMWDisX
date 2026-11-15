@@ -25402,6 +25402,8 @@ optional code are `C287-DFB5` + `9386-A491` + `C28D-AF95` + `608B-A721` +
 SNES Game Genie has no compare byte)
 **Recorded:** 2026-11-14 23:26:32
 
+Tags: `demo-ready` `video-ready`
+
 **Mechanism:** This is the SMW version of the OoT "arrows fly through
 enemies" cheat. When a fireball touches a sprite, `ProcessFireball`
 (`bank_02.asm`) first turns Mario's fireball into smoke, unless it is a
@@ -25432,7 +25434,7 @@ different byte there. Not checked further.
 
 **Caveats:**
 
-- Not tested.
+- Tested by the user in Mesen2.
 - `ProcessFireball` checks each fireball every 4th frame. A Chuck gets one
   more hit on each check while the fireball touches it, so one fireball
   can take several of its 5 hits (read from the code, not run).
@@ -25445,13 +25447,15 @@ different byte there. Not checked further.
   every enemy" (`$02A0F1`), but then fireballs pass every enemy and kill
   none.
 
-## Fireballs fly twice as fast
+## Fireballs fly about 1.7 times as fast
 
-**Codes:** `ECEB-6FD7` + `D1EB-6F07` (use both)
-**Raw form:** `00FE94:FA` (orig `$FD`); `00FE95:06` (orig `$03`)
+**Codes:** `E8EB-6FD7` + `D9EB-6F07` (use both)
+**Raw form:** `00FE94:FB` (orig `$FD`); `00FE95:05` (orig `$03`)
 (address:new-byte — the original byte is documentation, not part of the code;
 SNES Game Genie has no compare byte)
 **Recorded:** 2026-11-14 23:27:20
+
+Tags: `demo-ready` `video-ready`
 
 **Mechanism:** This is the SMW version of the OoT "arrows fly twice as
 fast" cheat. `ShootFireball` (`bank_00.asm`) sets the fireball's X speed
@@ -25468,12 +25472,19 @@ DATA_00FE94:
 
 `MarioFireball` (`bank_02.asm`) adds `ExtSpriteXSpeed` to the X position
 each frame as whole pixels, so the speed is 3 px per frame. The codes
-change the table to `$FA,$06`, 6 px per frame each way. The speed is never
-changed after that, also not by bounces, so the fireball stays at 2x.
+change the table to `$FB,$05`, 5 px per frame each way. The speed is never
+changed after that, also not by bounces, so the fireball stays at 5/3 the
+normal speed.
+
+The first version used `$FA,$06` (`ECEB-6FD7` + `D1EB-6F07`, 2x). In
+testing, its fireballs sometimes skipped through enemies without hurting
+them, so the user asked for about 25% slower. The speed is whole pixels,
+so 4.5 px is not possible. 5 px was used. 4 px (`$FC,$04`, not made)
+would skip even less.
 
 **Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has `FD 03`
 at `$00FE94`. Read and encoded with `cheats/tools/sgg.py`. No bytes near
-the table in `$00FE00`-`$00FEFF` hold `FA 06` (or a close pair), so no
+the table in `$00FE00`-`$00FEFF` hold `FB 05` (or a close pair), so no
 1-code version that moves the `LDA` operand exists.
 
 **Revisions:** U. SS has the same bytes. J, E0 and E1 differ at these
@@ -25481,11 +25492,13 @@ addresses. Not checked further.
 
 **Caveats:**
 
-- Not tested.
+- Not tested. The 2x version (`$FA,$06`) was tested by the user in
+  Mesen2 and worked, but its fireballs sometimes skipped through enemies.
 - Only the X speed changes. The fireball bounces as high and as often as
-  before, so the bounces are twice as long.
+  before, so the bounces are about 1.7 times as long.
 - `ProcessFireball` checks each fireball every 4th frame, so it now moves
-  about 24 px between checks. It can fly past small enemies.
+  about 20 px between checks (12 px before, 24 px at 2x). It can still
+  fly past small enemies sometimes.
 - These codes conflict with the codes that write `$00FE94`/`$00FE95` (the
   second-code form in "Fireballs drop straight down", and the Yoshi
   fireball entry in `smw_game_genie_big_codes.md`). Codes that move the
@@ -25541,37 +25554,3 @@ method. The optional table codes change `TimerTable` itself.
 - "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`.
   The main codes read a different table, so with them that code does
   nothing. The optional table codes conflict with it (same address).
-
-## Every level starts with 200 time
-
-**Code:** `9B66-0FF9`
-**Raw form:** `058584:59` (orig `$D7`)
-(address:new-byte — the original byte is documentation, not part of the code;
-SNES Game Genie has no compare byte)
-**Recorded:** 2026-11-15 12:45:07
-
-**Mechanism:** The level loader (`bank_05.asm`) sets the hundreds digit of
-the timer with `LDA.L TimerTable,X`. `TimerTable` is `$00,$02,$03,$04`,
-and X is the top 2 bits of byte 4 of the level header. The code changes
-the low byte of the operand, so it reads `$05:8459` instead of
-`$05:84D7`. That address already holds `00 02 02 02`, so every level with
-a timer starts with 200. Index 0 still reads `$00`, so levels without a
-timer (such as Yoshi's House) still have none.
-
-**Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has
-`BF D7 84 05` at `$058583` and `00 02 02 02` at `$058459`. Read and
-encoded with `cheats/tools/sgg.py`.
-
-**Revisions:** U only. Others not checked.
-
-**Caveats:**
-
-- Not tested.
-- The time is set only when you enter a level's first room
-  (`SublevelCount` = 0), as before. Pipes and doors keep the time left.
-- 200 is about 2 minutes 15 seconds (one count is 41 frames). Long
-  levels may not be possible in time.
-- "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`,
-  which this code no longer reads, so with this code it does nothing.
-- "Every level starts with 100 less time" writes the same address, so use
-  only one of the two.
