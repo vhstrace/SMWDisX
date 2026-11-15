@@ -568,7 +568,7 @@ frames, which a real fireball does not do.
   puff, so it adds 2 hits to a Chuck, not 1. A Mario fireball becomes a puff
   on the first check, so the second check does nothing.
 - An extended sprite that runs into an enemy plays the bonk sound.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Mario throws Yoshi's fireballs
 

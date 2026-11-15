@@ -8098,8 +8098,7 @@ change of state, and he only braces and charges at you like all the others.
   `CODE_02C6A7`, and the branch after it was replaced by a `BRA`. That is
   also why the `!SFX_NOTICEMESENPAI` behind it never plays. No code here
   changes it.
-- Not tested in play. Every effect above comes from the disassembly, and the
-  byte at each address was checked against the reference ROM.
+- Tested by the user in Mesen2.
 
 **Provenance:** the bytes were read from `comparison_U.smc` (the U release,
 without its 512-byte copier header) and compared with the disassembly.
@@ -8248,8 +8247,7 @@ for the Spiny.
 - The shell codes (`0189CA`, `018A42`, `018A74`, `018A83`, `018A9F`, `018AD0`)
   run only for sprites `$00`-`$03`, the Koopas without shells. So one of them
   must be on the screen to show anything.
-- Not tested in play. Every effect above comes from the disassembly, and the
-  byte at each address was checked against the reference ROM.
+- Tested by the user in Mesen2.
 
 **Provenance:** the bytes were read from `comparison_U.smc` (the U release,
 without its 512-byte copier header) and compared with the disassembly.
@@ -15635,7 +15633,7 @@ The effect comes from the disassembly.
 
 **Caveats:**
 
-- Not tested.
+- Tested by the user in Mesen2.
 - No level can use its own generator while this is on (no Super Koopas,
   dolphins, Eeries and so on).
 
@@ -24364,7 +24362,7 @@ decode back to these addresses and bytes with `ggpatch`.
 - Every Chuck that walks and charges through this state is faster, not only
   Chargin' Chucks. Add `0DAB-67AB` (from the same table) to make the patrol
   speed faster too.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## The cape hits every sprite on the screen
 
@@ -24416,7 +24414,7 @@ it.
   screen are hit too.
 - The cape only counts while it swings: a cape spin, or the other moves that
   set `CapeInteracts`.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## One fireball kills a Chuck
 
@@ -24561,7 +24559,7 @@ it.
 - Walls on layer 2 still do not break.
 - The check runs only while a Chuck charges, so in practice this is the
   Chargin' Chuck (and other Chucks only if they charge).
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Stomping an enemy knocks Mario off to the side
 
@@ -24617,7 +24615,7 @@ C0 00 F0 02 A9 E8 85 7B 60 20` at `$01A947`, as in the source.
   change. Chucks use their own stomp code, so they do not change either.
 - Do not use this with "Stomps don't hurt enemies". That code puts an `RTS`
   at `$01A94A`, before these bytes.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Berries leave a note block behind
 
@@ -24658,7 +24656,7 @@ in the source. The codes decode back to `$02BB03:$0E` and `$02D208:$0E` with
   out of it.
 - The berry still counts as eaten, so the berry counters, the eggs and the
   green berry time bonus work as before.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Mario can pick up almost any solid block
 
@@ -24710,7 +24708,7 @@ in the source. `$00F26B + $20 = $00F28B`, the `RTS`. The code decodes back to
   ground, so Mario can dig into it by pressing Y or X.
 - Pressing Y or X to start running while standing on such a tile picks it up.
 - Tiles outside the range (most ground, ledges, coins) cannot be picked up.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Yoshi's pink-berry egg hatches a Chargin' Chuck
 
@@ -24798,7 +24796,7 @@ with `tools/gg_encode.py`. The other four codes are the ones in the
 - Do not use this with the codes that patch `$00FEC0`, `$00FEC5` or
   `$00FEB1` ("Mario throws hammers instead of fireballs", "Fireball launch Y
   speed", "Mario gets four fireballs at once").
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Mario throws fast Yoshi fireballs
 
@@ -24828,7 +24826,7 @@ frame) facing right. Both directions get the same speed, but it is more than
 - `ProcessFireball` checks each slot only every 4th frame, so the fireball
   moves about 26 px between checks. It can fly past small enemies.
 - The other caveats of "Mario throws Yoshi fireballs" apply.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Stomps launch Mario very high
 
@@ -24876,7 +24874,7 @@ with `tools/gg_encode.py`.
 - The `PlayerIsClimbing` check in `BoostMarioSpeed` is skipped.
 - Works with "Stomping an enemy knocks Mario off to the side" (6 codes
   together, so emulator only).
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Small and big Mario throw fireballs
 
@@ -24928,7 +24926,7 @@ form with `tools/gg_encode.py`.
 - `ShootFireball` sets `ShootFireTimer`, which shows pose `$3F` on the ground
   and `$16` in the air. Those poses were not checked for small Mario, so his
   throwing pose may look wrong.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Mario enters pipes without pressing a direction
 
@@ -25087,7 +25085,7 @@ encoder.
 - The second code also gives small, big and fire Mario the cape hitbox in a
   spin jump, as cape Mario has.
 - The ducking, Yoshi and spin jump checks still apply.
-- Not tested in play. The effect comes from the disassembly.
+- Tested by the user in Mesen2.
 
 ## Mario breathes out a steady stream of bubbles
 
@@ -25644,7 +25642,7 @@ back to its raw form with `snes_gg_encode.py`. `SMW_SS.smc`,
 
 **Caveats:**
 
-- Not tested.
+- Tested by the user in Mesen2.
 - Each instrument has its own pitch multiplier, so the new instrument
   can play in a different key or octave from the old one.
 - The last instrument (`$12`) reads the first 5 bytes of the percussion
@@ -25761,7 +25759,7 @@ and `SMW_E1.smc` have the same bytes at the same addresses. In
 
 **Caveats:**
 
-- Not tested.
+- Tested by the user in Mesen2.
 - Sound effects use the same table, so some of them change pitch too.
 - Between two notes (pitch slides, vibrato and fine tuning), the sound
   program adds a part of the gap to the next value. Next to a changed
@@ -25889,7 +25887,7 @@ first two codes from the one-semitone entry.
 
 **Caveats:**
 
-- Not tested.
+- Tested by the user in Mesen2.
 - The caveats of the one-semitone entry apply. Going down, the 4 lowest
   notes are silent.
 - Going up, the highest notes can pass the DSP's largest pitch and play
@@ -26004,3 +26002,102 @@ optional code are `C287-DFB5` + `9386-A491` + `C28D-AF95` + `608B-A721` +
   scroll commands 04, 05 or 0A" and "The auto-scroll sprite runs an unused
   scroll: the screen moves up and down 48 pixels and shakes at each end".
   They write `$05BC89` too.
+
+## Fireballs fly through enemies
+
+**Code:** `4AC3-D466`
+**Raw form:** `02A0EA:2C` (orig `$20`)
+(address:new-byte — the original byte is documentation, not part of the code;
+SNES Game Genie has no compare byte)
+**Recorded:** 2026-11-14 23:26:32
+
+**Mechanism:** This is the SMW version of the OoT "arrows fly through
+enemies" cheat. When a fireball touches a sprite, `ProcessFireball`
+(`bank_02.asm`) first turns Mario's fireball into smoke, unless it is a
+Yoshi fireball (`$11`), and then hurts the sprite:
+
+```
+    LDA.W ExtSpriteNumber,Y                   ; \ if Yoshi fireball...
+    CMP.B #$11                                ; |
+    BEQ +                                     ; |
+    PHX                                       ; |
+    TYX                                       ; |
+    JSR CODE_02A045                           ; | ...?
+    PLX                                       ; /
+```
+
+`CODE_02A045` plays the bonk sound and changes the fireball to smoke
+(`JMP CODE_02A4E0`). The code changes that `JSR` to `BIT $A045` (`$20` to
+`$2C`), so Mario's fireballs act like Yoshi's: the sprite is still
+killed or turned into a coin, and the fireball keeps going.
+
+**Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has `C9 11
+F0 06 DA BB 20 45 A0 FA` at `$02A0E4`, so the `JSR` opcode is at
+`$02A0EA` (file offset `$122EA` with the header). Read and encoded with
+`cheats/tools/sgg.py`.
+
+**Revisions:** U. SS, E0 and E1 also have `$20` at `$02A0EA`. J has a
+different byte there. Not checked further.
+
+**Caveats:**
+
+- Not tested.
+- `ProcessFireball` checks each fireball every 4th frame. A Chuck gets one
+  more hit on each check while the fireball touches it, so one fireball
+  can take several of its 5 hits (read from the code, not run).
+- A fire-immune sprite no longer bonks the fireball away. The fireball
+  passes it with no sound.
+- A sprite turned into a coin may be hit again by the same fireball and
+  be reset to a new coin (read from the code, not run).
+- Fireballs still turn to smoke on walls.
+- Conflicts with nothing at `$02A0EA`. Works with "Fireballs bounce off
+  every enemy" (`$02A0F1`), but then fireballs pass every enemy and kill
+  none.
+
+## Fireballs fly twice as fast
+
+**Codes:** `ECEB-6FD7` + `D1EB-6F07` (use both)
+**Raw form:** `00FE94:FA` (orig `$FD`); `00FE95:06` (orig `$03`)
+(address:new-byte — the original byte is documentation, not part of the code;
+SNES Game Genie has no compare byte)
+**Recorded:** 2026-11-14 23:27:20
+
+**Mechanism:** This is the SMW version of the OoT "arrows fly twice as
+fast" cheat. `ShootFireball` (`bank_00.asm`) sets the fireball's X speed
+from `DATA_00FE94`, by the way Mario faces:
+
+```
+DATA_00FE94:
+    db $FD,$03
+...
+    LDY.B PlayerDirection
+    LDA.W DATA_00FE94,Y
+    STA.W ExtSpriteXSpeed,X
+```
+
+`MarioFireball` (`bank_02.asm`) adds `ExtSpriteXSpeed` to the X position
+each frame as whole pixels, so the speed is 3 px per frame. The codes
+change the table to `$FA,$06`, 6 px per frame each way. The speed is never
+changed after that, also not by bounces, so the fireball stays at 2x.
+
+**Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has `FD 03`
+at `$00FE94`. Read and encoded with `cheats/tools/sgg.py`. No bytes near
+the table in `$00FE00`-`$00FEFF` hold `FA 06` (or a close pair), so no
+1-code version that moves the `LDA` operand exists.
+
+**Revisions:** U. SS has the same bytes. J, E0 and E1 differ at these
+addresses. Not checked further.
+
+**Caveats:**
+
+- Not tested.
+- Only the X speed changes. The fireball bounces as high and as often as
+  before, so the bounces are twice as long.
+- `ProcessFireball` checks each fireball every 4th frame, so it now moves
+  about 24 px between checks. It can fly past small enemies.
+- These codes conflict with the codes that write `$00FE94`/`$00FE95` (the
+  second-code form in "Fireballs drop straight down", and the Yoshi
+  fireball entry in `smw_game_genie_big_codes.md`). Codes that move the
+  `LDA DATA_00FE94,Y` operand (`$00FECC`/`$00FECD`, "Fireballs drop
+  straight down" and "Mario throws Yoshi fireballs") make these codes do
+  nothing.
