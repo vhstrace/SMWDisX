@@ -1,12 +1,622 @@
 # Super Mario World — big Game Genie codes
 
-Cheats here need far more codes than a real Game Genie can hold (it takes 5
-at most). They write a small new routine into unused ROM, one byte per code.
-Use them in an emulator that takes any number of codes, such as Mesen.
+Cheats here need more codes than a real Game Genie can hold (it takes 5 at
+most). Most of them write a small new routine into unused ROM, one byte per
+code; the others change many bytes of a table or routine. Use them in an
+emulator that takes any number of codes, such as Mesen.
 
 All codes are for the U release. SNES Game Genie codes have no compare byte.
-All of the effects below are derived from the disassembly and **have not been
-observed in play**.
+Unless an entry says it was tested, its effect is derived from the disassembly
+and **has not been observed in play**.
+
+## Mario (and Yoshi, since he shares the same speed) walks and runs much faster, both directions
+
+**Code:** `6627-0F0F` + `5627-0F6F` + `6627-0FAF` + `5627-04DF` + `6627-040F`
++ `5627-046F` + `6627-04AF` + `5627-07DF` (apply all eight together)
+**Raw form:** `00D535:88` + `00D536:78` + `00D537:88` + `00D538:78` +
+`00D539:88` + `00D53A:78` + `00D53B:88` + `00D53C:78` (address:new-byte —
+SNES Game Genie codes carry no compare byte; the original bytes are
+`EC 14 DC 24 DC 24 D0 30`)
+**Recorded:** 2026-08-11 01:12:10
+
+Tags: `demo-ready`
+
+**Mechanism:** Mario's horizontal top speed (`bank_00.asm`, the physics routine
+that starts near `CODE_00D6B1`) is a simple system: speed up toward a limit,
+then stop speeding up. On every frame that a direction is held, the code picks
+a byte in `DATA_00D535`. This is a table of signed-byte speed limits, with one
+8-byte row for each `SlopeType` (flat ground is `SlopeType` `$00`, so row 0,
+`$00D535`-`$00D53C`). The code stops adding acceleration when the high byte of
+`PlayerXSpeed` gets to that limit:
+
+```
+DATA_00D535:
+    db $EC,$14,$DC,$24,$DC,$24,$D0,$30        ; flat ground (SlopeType 0)
+CODE_00D742:
+    LDA.B PlayerXSpeed+1
+    SEC
+    SBC.W DATA_00D535,Y                       ; already at (or past) the limit?
+    BEQ CODE_00D76B
+    EOR.W DATA_00D535,Y
+    BPL CODE_00D76B                           ; yes -> stop speeding up
+    ...
+    LDA.W MarioAccel_,X                       ; otherwise add this frame's acceleration
+    ...
+    ADC.B PlayerXSpeed
+```
+
+`Y` is made as `SlopeType | (tier * 2) | direction`, and there are four tiers:
+
+| Tier | When | Offsets | Limit |
+|---|---|---|---|
+| 0 | walking | 0/1 | `$EC`/`$14` = -20/+20 |
+| 1 | run button (`Y`/`X`) held | 2/3 | `$DC`/`$24` = -36/+36 |
+| 2 | run button held, speed at least `$23` | 4/5 | `$DC`/`$24` = -36/+36 |
+| 3 | tier 2 and `PlayerPMeter` full (`$70`) | 6/7 | `$D0`/`$30` = -48/+48 |
+
+Tier 3 comes from `CODE_00D96A`. It fills `PlayerPMeter` while in tier 2,
+and when the meter reaches `$70` it does one more `INY`. That is how Mario
+gets to his full running speed.
+
+The code sets all eight bytes to `$88`/`$78` (-120/+120). Now every tier has
+the same, much higher limit in both directions. So Mario always speeds up
+toward 120, whether he walks or runs.
+
+Nothing here checks `PlayerRidingYoshi`. The only use of it in this whole
+routine is an unrelated branch for the spin jump sound effect. So Yoshi does not
+have his own top speed. When Mario rides Yoshi, Mario's own `PlayerXSpeed` moves
+Yoshi on each frame (see the note about `CODE_02A751` and the Yoshi hand-off in
+the "ghost house" code elsewhere in this doc for how the two are linked). So the
+same table change makes Yoshi with a rider run exactly as much faster as Mario
+on foot.
+
+**Evidence:** The ROM at `$00D535`-`$00D53C` has `EC 14 DC 24 DC 24 D0 30`,
+as the source says. All eight codes decode back to their addresses and bytes.
+A headless Mesen run on flat ground in Yoshi's Island 2 logged the high byte of
+`PlayerXSpeed`:
+
+| Codes | Walk right | Run right | Run left |
+|---|---|---|---|
+| None | 21 | 48 | -48 |
+| First six only (the old version of this entry) | 121 | 118, then back to 48 | — |
+| All eight | 121 | 121 | -96 and still speeding up when Mario hit the left edge of the level |
+
+**Revised 2026-10-01.** This entry used to have only the first six codes. It
+said tier 2 was the top tier and that offsets 6/7 were never used. That was
+wrong: when the P-meter filled, the limit went back to `$30` and Mario slowed
+down to his normal running speed. Walking was fast, but running was not.
+
+**Caveats:** You need all eight codes together. If you leave the pair for one
+tier unpatched, Mario slows back down to the old limit as soon as he gets to
+that tier. Eight codes is more than a real Game Genie holds, so use an
+emulator's cheat list. Only the flat ground row (`SlopeType` `$00`) is patched.
+The seven other rows, for slopes of different angles, do not change, so speed
+on slopes is normal. This does not change `MarioAccel_`, the table of
+acceleration per frame. So it still takes the same time to speed up as before.
+Mario just keeps getting faster past the old limit, and reaches 120 in about
+80 frames. Not played by hand.
+
+## Hold Select and sprites stop dead
+
+**Codes:** `EEB7-DFD0` + `C9E2-A4D5` + `F9E2-A405` + `4BE2-A465` + `4DE2-A4A5` +
+`2DE2-A7D5` + `D7E2-A705` + `0AE2-A765` + `26E2-A7A5` + `C8E3-ADD5` +
+`16E3-AD05` + `16E3-AD65` + `1DE3-ADA5`
+
+**Raw form:** (address:new-byte — the original byte is documentation, not part
+of the code; SNES Game Genie has no compare byte)
+
+| Code | Raw | Orig | Meaning |
+|---|---|---|---|
+| `EEB7-DFD0` | `019034:FF` | `$AB` | `JSR $ABD8` becomes `JSR $FFD8` |
+| `C9E2-A4D5` | `01FFD8:A5` | `$FF` | `LDA $15` |
+| `F9E2-A405` | `01FFD9:15` | `$FF` | operand `$15`, `byetudlrHold` |
+| `4BE2-A465` | `01FFDA:29` | `$FF` | `AND #` |
+| `4DE2-A4A5` | `01FFDB:20` | `$FF` | mask `$20`, Select |
+| `2DE2-A7D5` | `01FFDC:D0` | `$FF` | `BNE` |
+| `D7E2-A705` | `01FFDD:03` | `$FF` | branch `+3` |
+| `0AE2-A765` | `01FFDE:4C` | `$FF` | `JMP` |
+| `26E2-A7A5` | `01FFDF:D8` | `$FF` | target low byte |
+| `C8E3-ADD5` | `01FFE0:AB` | `$FF` | target high byte, `$01ABD8` |
+| `16E3-AD05` | `01FFE1:68` | `$FF` | `PLA` |
+| `16E3-AD65` | `01FFE2:68` | `$FF` | `PLA` |
+| `1DE3-ADA5` | `01FFE3:60` | `$FF` | `RTS` |
+
+**Recorded:** 2026-09-12 15:45:00
+
+**Mechanism:** `SubUpdateSprPos` at `$019032` is the routine that moves a
+sprite. It adds gravity, limits the fall speed, moves the sprite by its X and Y
+speeds, and then runs the block interaction. It is called from 23 places in
+`bank_01.asm`, and together these cover almost every sprite in the game that
+moves. Its first instruction is the Y position update:
+
+```
+SubUpdateSprPos:                              ; $019032
+    JSR SubSprYPosNoGrvty                     ; 20 D8 AB
+    LDY.B #$00                                ; $019035
+    ...
+    JSR SubSprXPosNoGrvty                     ; move by X speed
+    ...
+    JSR CODE_019140                           ; block interaction
+    RTS
+```
+
+The cheat puts a short new routine in the unused space at the end of bank `$01`,
+and sends that first call to it instead. Only one byte of the original routine
+changes: the high byte of the call target, `$AB` to `$FF`. So `JSR $ABD8`
+becomes `JSR $FFD8`. The low byte `$D8` is already correct. That is why the new
+routine is at `$01FFD8` and not at another place in the free space.
+
+The new routine is twelve bytes:
+
+```
+$01FFD8  A5 15      LDA $15                   ; buttons held this frame
+$01FFDA  29 20      AND #$20                  ; Select
+$01FFDC  D0 03      BNE +                     ; held -> take the exit below
+$01FFDE  4C D8 AB   JMP SubSprYPosNoGrvty     ; not held -> the original call
+$01FFE1  68         PLA                       ; + drop this routine's own
+$01FFE2  68         PLA                       ;   return address
+$01FFE3  60         RTS                       ; return to the sprite instead
+```
+
+When Select is not held, it jumps directly to `SubSprYPosNoGrvty`. That routine
+ends with `RTS`, which returns to `$019035`, exactly where the original `JSR`
+would have returned. So all of `SubUpdateSprPos` runs normally, and nothing is
+slower or different.
+
+When Select is held, the two `PLA`s remove the return address that `JSR $FFD8`
+pushed. The `RTS` then pops the address that the *sprite* pushed when it called
+`SubUpdateSprPos`. So the sprite's own code continues, and all of
+`SubUpdateSprPos` is skipped: no Y position update, no gravity, no fall limit, no
+X position update, and no block interaction.
+
+**What it affects:** Hold Select, and every sprite that moves with
+`SubUpdateSprPos` stops where it is. Walking enemies stop walking, thrown shells
+stay in the air, falling platforms stop falling, and anything in the middle of a
+jump stops there. Let go, and everything continues with exactly the speed it had.
+Mario is not affected, because he has his own movement code in bank `$00`. So
+this is a button that freezes the room.
+
+**Evidence:** The reference ROM has `20 D8 AB` at `$019032`, so the high byte of
+the call target is at `$019034`. `SubSprYPosNoGrvty` is at `$01ABD8`. This was
+confirmed with `tools/linemap_U.tsv` and `SMW_U.sym`. The 23 callers were counted
+in `bank_01.asm`. Every one of them is a `JSR`, never a `JSL`, and this is what
+makes the stack trick safe. The routine ends with `RTS`, so no caller could use
+`JSL` anyway. The 65 bytes from `$01FFBF` to `$01FFFF` are unused filler.
+`bank_01.asm` ends with `%insert_empty($3E,$41,$41,$41,$41)`, which for the U
+release writes `$41` = 65 bytes of `$FF`, and the reference ROM does have 65
+`$FF` bytes there. Nothing in the ROM reads or calls that space. All thirteen
+codes decode back correctly with `tools/gg_encode.py`, and match
+`cheats({op:'make'})`. The effect comes from the disassembly and **was not seen
+in play**.
+
+**Caveats:** **Thirteen codes.** Real Game Genie hardware takes five, so this
+one is only for emulators.
+
+**Mario is not affected.** Nothing else that bank `$00` code controls is
+affected either. The screen still scrolls, the timer still counts down, and the
+music keeps playing.
+
+**A few sprites will keep moving.** The 23 call sites cover most of the game. But
+a sprite with its own movement code, one that calls `SubSprXPosNoGrvty` or
+`SubSprYPosNoGrvty` directly and does not use `SubUpdateSprPos`, is not affected
+by this cheat.
+
+**Sprites stop interacting with blocks as well as moving.** At its end,
+`SubUpdateSprPos` calls `CODE_019140`, the test for sprites against blocks. So
+while Select is held, a frozen sprite does not test the ground under it either.
+It does not fall through the floor, because it does not move at all. But a sprite
+that is inside a block when you let go of Select may act strangely on the first
+frame after.
+
+**The early exit returns with `A` = `$20`.** The normal exit from
+`SubUpdateSprPos` leaves whatever value the last instruction loaded. No caller
+was found that tests it, but this is the one register that is different between
+the two paths.
+
+**Select does nothing in a level normally**, so you lose no control that exists.
+
+**Provenance:** The addresses come from `tools/linemap_U.tsv` (fingerprint
+`0589ebe7ef0f1639`), and were checked against a direct read of
+`comparison_U.smc` without its 512-byte copier header.
+
+The addresses were checked for the U release. The other four releases have not
+been checked. The free space at the end of bank `$01` is `$41` bytes in J and U.
+In the other three releases it is filled from a different file, so the new
+routine would have to be placed again for those.
+
+## Every sprite moves at one fixed speed, left or right
+
+There are four versions of this cheat. For each frame, each version ignores the
+sprite's real horizontal speed and moves the sprite at a fixed speed instead. The
+sprite keeps the direction it was already moving in. Pick one. They patch the
+same bytes, so you cannot combine them.
+
+### Version 1 — everything moves at 4 pixels a frame (speed ±64)
+
+**Codes:** `4BB1-DDD0` + `6DB1-DD00` + `DBB1-DD60` + `0DB1-DDA0` +
+`B9B1-DFD0` + `81B1-DF00` + `6DB1-DF60` + `D3B1-DFA0`
+
+**Raw form:** (address:new-byte — the original byte is documentation, not part
+of the code; SNES Game Genie has no compare byte)
+
+| Code | Raw | Orig | Meaning |
+|---|---|---|---|
+| `4BB1-DDD0` | `019060:29` | `$BC` | `AND #` |
+| `6DB1-DD00` | `019061:80` | `$4A` | mask `$80`, keep only the sign bit |
+| `DBB1-DD60` | `019062:09` | `$16` | `ORA #` |
+| `0DB1-DDA0` | `019063:40` | `$F0` | value `$40`, so `$40` or `$C0` |
+| `B9B1-DFD0` | `019064:95` | `$11` | `STA dp,X` |
+| `81B1-DF00` | `019065:B6` | `$0A` | operand `$B6`, `SpriteXSpeed` |
+| `6DB1-DF60` | `019066:80` | `$76` | `BRA` |
+| `D3B1-DFA0` | `019067:0E` | `$B6` | branch `+14`, to `$019076` |
+
+### Version 2 — everything moves at 2 pixels a frame (speed ±32)
+
+**Codes:** `DCB1-DDD0` + `CBB1-DD00` + `4DB1-DD60` + `BDB1-DDA0` +
+`D4B1-DFD0` + `0BB1-DF00` + `ADB1-DF60` + `B9B1-DFA0` + `81B1-D4D0` +
+`6DB1-D400` + `D8B1-D460`
+
+| Code | Raw | Orig | Meaning |
+|---|---|---|---|
+| `DCB1-DDD0` | `019060:0A` | `$BC` | `ASL A`, sign bit into carry |
+| `CBB1-DD00` | `019061:A9` | `$4A` | `LDA #` |
+| `4DB1-DD60` | `019062:20` | `$16` | value `$20`, +32 |
+| `BDB1-DDA0` | `019063:90` | `$F0` | `BCC` |
+| `D4B1-DFD0` | `019064:02` | `$11` | branch `+2`, taken when positive |
+| `0BB1-DF00` | `019065:49` | `$0A` | `EOR #` |
+| `ADB1-DF60` | `019066:C0` | `$76` | value `$C0`, turns `$20` into `$E0` |
+| `B9B1-DFA0` | `019067:95` | `$B6` | `STA dp,X` |
+| `81B1-D4D0` | `019068:B6` | `$B5` | operand `$B6`, `SpriteXSpeed` |
+| `6DB1-D400` | `019069:80` | `$B6` | `BRA` |
+| `D8B1-D460` | `01906A:0B` | `$48` | branch `+11`, to `$019076` |
+
+### Version 3 — everything crawls at 1/16 of a pixel a frame (speed ±1)
+
+**Codes:** `DCB1-DDD0` + `CBB1-DD00` + `DFB1-DD60` + `BDB1-DDA0` +
+`D4B1-DFD0` + `0BB1-DF00` + `E3B1-DF60` + `B9B1-DFA0` + `81B1-D4D0` +
+`6DB1-D400` + `D8B1-D460`
+
+These are the same eleven bytes as version 2, with two values changed:
+
+| Code | Raw | Orig | Meaning |
+|---|---|---|---|
+| `DFB1-DD60` | `019062:01` | `$16` | value `$01`, +1 |
+| `E3B1-DF60` | `019066:FE` | `$76` | value `$FE`, turns `$01` into `$FF` |
+
+### Version 4 — everything moves as fast as the game can count (speed +127 / -128)
+
+**Codes:** `DCB1-DDD0` + `CBB1-DD00` + `5EB1-DD60` + `1BB1-DDA0` +
+`DDB1-DFD0` + `B9B1-DF00` + `81B1-DF60` + `6DB1-DFA0` + `D2B1-D4D0`
+
+| Code | Raw | Orig | Meaning |
+|---|---|---|---|
+| `DCB1-DDD0` | `019060:0A` | `$BC` | `ASL A`, sign bit into carry |
+| `CBB1-DD00` | `019061:A9` | `$4A` | `LDA #` |
+| `5EB1-DD60` | `019062:7F` | `$16` | value `$7F`, the largest positive speed |
+| `1BB1-DDA0` | `019063:69` | `$F0` | `ADC #` |
+| `DDB1-DFD0` | `019064:00` | `$11` | value `$00`, so the carry adds 1 |
+| `B9B1-DF00` | `019065:95` | `$0A` | `STA dp,X` |
+| `81B1-DF60` | `019066:B6` | `$76` | operand `$B6`, `SpriteXSpeed` |
+| `6DB1-DFA0` | `019067:80` | `$B6` | `BRA` |
+| `D2B1-D4D0` | `019068:0D` | `$B5` | branch `+13`, to `$019076` |
+
+**Recorded:** 2026-09-12 16:07:28
+
+**Mechanism:** `SubUpdateSprPos` at `$019032` moves a sprite by its speeds. It
+is called from 23 places in `bank_01.asm`, and together these cover almost every
+sprite in the game that moves. This is its horizontal half:
+
+```
+  + LDA.B SpriteXSpeed,X        ; $01905D  the sprite's X speed
+    PHA                         ; $01905F  keep the real value
+    LDY.W SpriteInLiquid,X      ; $019060  \
+    BEQ +                       ; $019063  |
+    ASL A                       ; $019065  | in water: write 3/4 of the
+    ROR.B SpriteXSpeed,X        ; $019066  | speed back into SpriteXSpeed
+    LDA.B SpriteXSpeed,X        ; $019068  |
+    PHA / STA $00 / ASL A       ; $01906A  |
+    ROR $00 / PLA / CLC         ; $01906E  |
+    ADC $00                     ; $019072  |
+    STA.B SpriteXSpeed,X        ; $019074  /
+  + JSR SubSprXPosNoGrvty       ; $019076  move by SpriteXSpeed
+    PLA                         ; $019079  \ put the real value back
+    STA.B SpriteXSpeed,X        ; $01907A  /
+```
+
+Two things about this code make the cheat possible.
+
+`SubSprXPosNoGrvty` does not get the speed in a register. It adds 12 to X and
+then continues into `SubSprYPosNoGrvty`, which reads `SpriteYSpeed,X`. And
+`SpriteYSpeed + 12` is `SpriteXSpeed`. So the value that really moves the sprite
+is whatever value is in `SpriteXSpeed,X` at `$019076`.
+
+The water block is 22 bytes long. All it does is write a different value into
+that byte before the call. That is exactly what the cheat needs to do. So each
+version writes its own few instructions over the start of the water block, and
+branches to `$019076`.
+
+At `$019060`, the accumulator still holds the sprite's X speed from the `LDA` at
+`$01905D`, so the new code already has the value.
+
+**Version 1** keeps only the sign bit, and sets bit 6:
+
+```
+$019060  29 80   AND #$80          ; $00 if moving right, $80 if moving left
+$019062  09 40   ORA #$40          ; -> $40 (+64) or $C0 (-64)
+$019064  95 B6   STA SpriteXSpeed,X
+$019066  80 0E   BRA +             ; to $019076
+```
+
+`$40` and `$C0` are the same distance from zero. That is why 64 is the only speed
+that fits in four bytes. The other versions must test the sign separately:
+
+```
+$019060  0A      ASL A             ; sign bit into the carry
+$019061  A9 20   LDA #$20          ; assume moving right
+$019063  90 02   BCC +             ; it was, so keep $20
+$019065  49 C0   EOR #$C0          ; it was not: $20 -> $E0, which is -32
+$019067  95 B6 + STA SpriteXSpeed,X
+$019069  80 0B   BRA ++            ; to $019076
+```
+
+Version 3 is the same code with `$01` and `$FE` instead of `$20` and `$C0`. This
+gives `$01` and `$FF`.
+
+Version 4 uses the carry as a number, not as a branch:
+
+```
+$019060  0A      ASL A             ; sign bit into the carry
+$019061  A9 7F   LDA #$7F          ; +127
+$019063  69 00   ADC #$00          ; add the carry: $7F, or $80 when negative
+$019065  95 B6   STA SpriteXSpeed,X
+$019067  80 0D   BRA +             ; to $019076
+```
+
+`$80` is -128. So this is the fastest speed that the byte can hold in each
+direction.
+
+**What the speeds mean.** `SubSprYPosNoGrvty` multiplies the speed by 16 and
+adds it to the sub-pixel position. So a speed of 16 is one pixel a frame. Version
+1 is 4 pixels a frame, version 2 is 2, version 4 is a little less than 8, and
+version 3 is 1/16 of a pixel. At that speed a sprite needs about four seconds to
+move one pixel.
+
+**Evidence:** The reference ROM has `BC 4A 16 F0 11 0A 76 B6 B5 B6 48` at
+`$019060`, which is the water block above, and `20 CC AB` at `$019076`. The
+`BEQ` at `$019063` is `F0 11`, so its target is `$019076`. It is the only branch
+into the block, and every version writes over it, so no path can skip the new
+code. All four versions decode back correctly with `tools/gg_encode.py`, and
+match `cheats({op:'make'})`. The effect comes from the disassembly and **was not
+seen in play**.
+
+**Caveats:** **The real speed is not changed.** The `PHA` at `$01905F` and the
+`PLA` at `$019079` write the sprite's own X speed back after the move. So
+everything that reads `SpriteXSpeed` later (turning at walls, being kicked,
+bouncing off other sprites) still sees the normal value. Only the distance moved
+on each frame is fixed.
+
+**Sprites that were standing still start moving right.** A speed of `$00` has
+its sign bit clear, so it counts as positive. Sprites that are not moving,
+sprites at the top of a jump, and platforms that never move sideways all drift
+to the right. In version 4 they go off the screen very fast.
+
+**Sprites no longer slow down in water.** The block that the cheat writes over is
+the one that reduces a sprite's speed to 3/4 while it is in liquid. So that no
+longer happens.
+
+**Not every sprite goes through this routine.** The 23 callers cover most walking
+and flying enemies. But sprites that move themselves, such as Lakitu, the
+rotating platforms and some bosses, set their positions directly and are not
+affected.
+
+**Provenance:** The addresses come from `tools/linemap_U.tsv` (fingerprint
+`0589ebe7ef0f1639`), and were checked against a direct read of
+`comparison_U.smc` without its 512-byte copier header.
+
+The addresses were checked for the U release. The other four releases have not
+been checked.
+
+## Hold Select and every enemy in the game swims
+
+**Codes:** `ADB9-0F60` + `EEB9-0FA0` + `C9EA-ADD5` + `F9EA-AD05` + `4BEA-AD65` +
+`4DEA-ADA5` + `EDEA-AFD5` + `D7EA-AF05` + `0AEA-AF65` + `7CEA-AFA5` +
+`B4EA-A4D5` + `0AEA-A405` + `FFEA-A465` + `B4EA-A4A5`
+
+**Raw form:** (address:new-byte — the original byte is documentation, not part
+of the code; SNES Game Genie has no compare byte)
+
+| Code | Raw | Orig | Meaning |
+|---|---|---|---|
+| `ADB9-0F60` | `019156:C0` | `$11` | `JSR $9211` becomes `JSR $FFC0` |
+| `EEB9-0FA0` | `019157:FF` | `$92` | (high byte of the new target) |
+| `C9EA-ADD5` | `01FFC0:A5` | `$FF` | `LDA $15` |
+| `F9EA-AD05` | `01FFC1:15` | `$FF` | operand `$15`, `byetudlrHold` |
+| `4BEA-AD65` | `01FFC2:29` | `$FF` | `AND #` |
+| `4DEA-ADA5` | `01FFC3:20` | `$FF` | mask `$20`, Select |
+| `EDEA-AFD5` | `01FFC4:F0` | `$FF` | `BEQ` |
+| `D7EA-AF05` | `01FFC5:03` | `$FF` | branch `+3` |
+| `0AEA-AF65` | `01FFC6:4C` | `$FF` | `JMP` |
+| `7CEA-AFA5` | `01FFC7:3A` | `$FF` | target low byte |
+| `B4EA-A4D5` | `01FFC8:92` | `$FF` | target high byte, `$01923A` |
+| `0AEA-A405` | `01FFC9:4C` | `$FF` | `JMP` |
+| `FFEA-A465` | `01FFCA:11` | `$FF` | target low byte |
+| `B4EA-A4A5` | `01FFCB:92` | `$FF` | target high byte, `$019211` |
+
+**Recorded:** 2026-09-12 16:38:00
+
+**Mechanism:** This is "All sprites use underwater physics" with a Select
+button added. That cheat changes the first branch of the sprite liquid test,
+`CODE_019211`, into `BRA CODE_01923A`, the path that sets bit 0 of
+`SpriteInLiquid`. That routine has no space to test a button as well. So this
+version does not change the routine, and puts a small new routine in front of it.
+
+The block interaction routine `CODE_019140` clears `SpriteInLiquid,X`, and then
+calls the liquid test:
+
+```
+CODE_019140:
+    ...
+    STZ.W SpriteInLiquid,X
+    JSR CODE_019211                           ; $019155: 20 11 92
+```
+
+The first two codes change that call to `JSR $FFC0`. The other twelve write the
+new routine into the unused `$FF` filler at the end of bank `$01`:
+
+```
+$01FFC0  A5 15      LDA $15                   ; buttons held this frame
+$01FFC2  29 20      AND #$20                  ; Select
+$01FFC4  F0 03      BEQ +                     ; not held -> the normal test
+$01FFC6  4C 3A 92   JMP CODE_01923A           ; held -> "in liquid"
+$01FFC9  4C 11 92 + JMP CODE_019211
+```
+
+**Select not held:** It jumps to `CODE_019211`. That routine runs exactly as in
+the unmodified game, and ends with `RTS`. The `RTS` returns to `$019158`, where
+the original `JSR` would have returned. Real water still works.
+
+**Select held:** It jumps into `CODE_01923A` with `$20` in the accumulator:
+
+```
+CODE_01923A:
+    TAY                                       ; Y = $20
+    LDA.W SpriteInLiquid,X                    ; 0, cleared by the caller
+    ORA.B #$01                                ; bit 0 = in liquid
+    CPY.B #$04                                ; $20 is not $04, so not lava
+    BNE CODE_019258
+    ...
+CODE_019258:
+    STA.W SpriteInLiquid,X
+CODE_01925B:
+    ...                                       ; rest of the routine, then RTS
+```
+
+`$20` is never `$04`, so the lava path is never taken, and no sprite is killed.
+After the store, the code continues into the rest of the routine, and its `RTS`
+returns to `$019158` as before. Every sprite that runs block interaction gets
+`SpriteInLiquid = $01` for that frame.
+
+**What it does:** `SubUpdateSprPos` reads `SpriteInLiquid`, and uses the water
+entries of its tables: gravity `$01` instead of `$03`, fall limit `$10` instead
+of `$40`, X speed at three quarters, and upward speed limited to `$E8`. Sprites
+with their own water code also read the byte. So Jumping Fish, Rip Van Fish,
+Blurps and Porcu-Puffers swim on dry land. Hold Select, and for enemies the whole
+level is under water. Let go, and on the next frame they use air physics again.
+
+**Why only one call is patched:** `CODE_019140` calls the liquid test a second
+time at `$01917D`. It only does this when `ScreenMode` bit 7 is set (levels with
+layer-2 interaction), and with the sprite position moved by the layer-2 offset.
+The liquid test only ever sets bits. So when the first call has set bit 0, the
+second call cannot clear it. Not patching the second call saves two codes and
+changes nothing.
+
+**Evidence:** The reference ROM has `20 11 92` at `$019155`, and `$FF` from
+`$01FFBF` to `$01FFFF` (`%insert_empty($3E,$41,…)` at the end of
+`bank_01.asm`). `tools/linemap_U.tsv` puts the first `JSR CODE_019211` at
+`$019155` and `CODE_01923A` at `$01923A`. `CODE_019211` has exactly two callers.
+Both are `JSR`, and both are in `CODE_019140`. Every code decodes back correctly
+with `tools/gg_encode.py`. The effect comes from the disassembly and **was not
+seen in play**.
+
+**Caveats:** **Splashes.** A splash is made when `SpriteInLiquid` is different
+from the frame before (`$019248`, `EOR SpriteInterIndex`). So any sprite may
+splash each time you press or let go of Select. Some sprites skip the splash
+because of their tweaker bits.
+
+**Lava does not kill sprites while Select is held.** The path for a held button
+skips the tile test. So a sprite in lava is only marked "in liquid", not "in the
+liquid that kills".
+
+**Mario is not affected.** `PlayerInWater` is a separate byte with its own test
+in bank `$00`.
+
+**Fourteen codes is far more than real hardware takes.** A Game Genie cartridge
+holds five, so this is a cheat for emulators.
+
+**It can be combined with "Hold Select and sprites stop
+dead".** That cheat uses `$01FFD8`-`$01FFE3` of the same filler, and this one
+uses `$01FFC0`-`$01FFCB`, so they do not overlap. Do not combine it with "All
+sprites use underwater physics", which is always on. That cheat skips the tile
+test inside `CODE_019211` itself, so Select would make no difference.
+
+**Provenance:** The addresses come from `tools/linemap_U.tsv` (fingerprint
+`0589ebe7ef0f1639`), and were checked against a direct read of
+`comparison_U.smc` without its 512-byte copier header.
+
+The addresses were checked for the U release. The other four releases have not
+been checked.
+
+## Yoshi's House is replaced by the title screen demo level, and you can play it
+
+**Codes:** `893D-A7F0` + `693D-A790` + `D13D-A7B0` + `9B3D-07F1` + `2E3D-0791` + `453D-64F5` + `A03D-6495` + `9CED-0FF0` + `DDED-AFF0`
+
+**Raw form:**
+- `05E30C:B5`, original `$2D`
+- `05E30D:85`, original `$80`
+- `05E30E:06`, original `$07`
+- `05E90C:59`, original `$00`
+- `05E90D:DF`, original `$D9`
+- `05EE08:27`, original `$59`
+- `05EE09:C4`, original `$E7`
+- `05F104:5A`, original `$0B`
+- `05F304:00`, original `$01`
+
+SNES Game Genie has no compare byte, so the codes write the values whatever is
+there. Use all nine together.
+
+**Recorded:** 2026-09-13 23:22:12
+
+**Mechanism:** The title screen demo is level `$0C7` (`!TitleScreenLevel`).
+`GM03LoadTitleScreen` loads it through `OverworldOverride`, and the demo plays
+it with recorded inputs. You cannot normally play it.
+
+Yoshi's House is level `$104`. The level loader in `bank_05.asm` reads these
+per-level entries, and the codes copy level `$0C7`'s entries into level `$104`'s:
+
+| Table | Level `$0C7` | Level `$104` | Codes |
+|---|---|---|---|
+| `Layer1Ptrs` (`$05E000`, 3 bytes) | `B5 85 06` (`TitleScrLevel0C7`) | `2D 80 07` | 1-3 |
+| `Layer2Ptrs` (`$05E600`, 3 bytes) | `59 DF FF` (background) | `00 D9 FF` | 4-5 |
+| `Ptrs05EC00` (2 bytes, bank `$07`) | `27 C4` (`TitleScrSprites0C7`) | `59 E7` | 6-7 |
+| `DATA_05F000` | `$5A` | `$0B` | 8 |
+| `DATA_05F200` | `$00` | `$01` | 9 |
+| `DATA_05F400`, `DATA_05F600` | `$0A`, `$00` | same | none |
+| `DATA_05F800`-`DATA_05FE00` | `$00` | same | none |
+
+- `DATA_05F000` holds the Layer 2 scroll setting (high 4 bits) and Mario's
+  start Y (low 4 bits).
+- `DATA_05F200` holds the Layer 3 setting (bits 6-7), the entrance type (bits
+  3-5) and Mario's start X (bits 0-2).
+
+After the codes, the only difference is the level number. The title screen code
+that depends on `OverworldOverride` does not run, so the level plays as a normal
+level.
+
+Header of `TitleScrLevel0C7`: `47 C0 85 00 00`. That is 8 screens, level mode
+`$00`, object tileset 0, sprite tileset 5, the overworld music and no time
+limit. Its sprite list (`$07C427`) has sprites `$05`, `$BD`, `$04`, `$05`, `$06`,
+`$07`, `$70` and `$4F`.
+
+**Evidence:** The ROM bytes in the table above were read at `$05E000 + 3 ×
+level`, `$05E600 + 3 × level`, `$05EC00 + 2 × level` and `$05F000`-`$05FE00 +
+level`. `TitleScrLevel0C7` is at `$0685B5` in `SMW_U.sym`, and `bank_05.asm`
+names it at `dl TitleScrLevel0C7` and `dw TitleScrSprites0C7`. The codes
+round-trip through `tools/gg_encode.py`. The effect is derived from the
+disassembly and **has not been observed in play**.
+
+**Caveats:**
+- **The ending uses this level slot too.** `GM1DLoadThankYou` loads Yoshi's
+  House for the "Thank You" scene, so that scene gets the demo level as well.
+- The demo level was built for a short recorded run. It may have no goal or
+  exit. If there is no way out, die or reset.
+- The music is the level's own overworld track, not the title screen music.
+- Do not use these codes with the other Yoshi's House replacement cheats.
+
+**Provenance:** Addresses from `SMW_U.sym` and `constants.asm`, plus a direct
+read of `comparison_U.smc` minus its 512-byte copier header.
+
+Addresses verified for the U release; the other four releases have not been
+checked.
 
 ## R swaps Mario with a sprite
 
