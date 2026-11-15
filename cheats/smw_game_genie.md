@@ -25492,8 +25492,8 @@ addresses. Not checked further.
 
 **Caveats:**
 
-- Not tested. The 2x version (`$FA,$06`) was tested by the user in
-  Mesen2 and worked, but its fireballs sometimes skipped through enemies.
+- Tested by the user in Mesen2: works. The 2x version (`$FA,$06`)
+  sometimes skipped through enemies.
 - Only the X speed changes. The fireball bounces as high and as often as
   before, so the bounces are about 1.7 times as long.
 - `ProcessFireball` checks each fireball every 4th frame, so it now moves
@@ -25507,13 +25507,13 @@ addresses. Not checked further.
   nothing.
 
 
-## Every level starts with 100 less time (400 to 300, 300 to 200, 200 to 100)
+## Every level starts with 200 less time (400 to 200, 300 to 100)
 
-**Codes:** `4D66-0FF9` + `AC66-0F99` (use both)
-**Raw form:** `058584:20` (orig `$D7`); `058585:CA` (orig `$84`)
+**Codes:** `DF62-D4F9` + `DF62-D499` + `D462-D4B9` (use all three)
+**Raw form:** `0584D8:01` (orig `$02`); `0584D9:01` (orig `$03`); `0584DA:02` (orig `$04`)
 (address:new-byte — the original byte is documentation, not part of the code;
 SNES Game Genie has no compare byte)
-**Optional, 3 codes that change the table instead:** `DF62-D4F9` + `D462-D499` + `D762-D4B9` (`0584D8:01` + `0584D9:02` + `0584DA:03`)
+**Optional, 2 codes, but levels that start with 200 get no time limit:** `FE66-0FF9` + `AC66-0F99` (`058584:1F` + `058585:CA`)
 **Recorded:** 2026-11-15 12:45:07
 
 **Mechanism:** The level loader (`bank_05.asm`) sets the hundreds digit of
@@ -25531,16 +25531,23 @@ TimerTable:
     STA.W InGameTimerHundreds                 ; |
 ```
 
-The codes change the `LDA.L` operand from `$05:84D7` to `$05:CA20`, which
-already holds `00 01 02 03`. So levels with 400 get 300, 300 gets 200 and
-200 gets 100. Index 0 still reads `$00`, so levels without a timer (such as
-Yoshi's House) still have none.
+The codes change the table to `$00,$01,$01,$02`. Levels with 400 get 200,
+and levels with 300 get 100. Levels with 200 can't lose 200: a timer of
+000 never counts down (`UpdateStatusBar` skips the countdown when the
+timer is already zero), so those levels would have no time limit at all.
+The codes give them 100 instead. Index 0 stays `$00`, so levels without a
+timer (such as Yoshi's House) still have none.
+
+The optional codes instead change the `LDA.L` operand from `$05:84D7` to
+`$05:CA1F`, which already holds `00 00 01 02`. That takes 400 and 300
+down by 200 too, but levels with 200 get 000 and no time limit.
 
 **Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has
-`BF D7 84 05` at `$058583` and `00 01 02 03` at `$05CA20`. Read and
-encoded with `cheats/tools/sgg.py`. No `00 01 02 03` exists where only one
-operand byte would need to change, so 2 codes is the least for this
-method. The optional table codes change `TimerTable` itself.
+`00 02 03 04` at `$0584D7` (`TimerTable`), `BF D7 84 05` at `$058583`, and
+`00 00 01 02` at `$05CA1F`. Read and encoded with `cheats/tools/sgg.py`.
+`TimerTable` is read only by this `LDA.L`. No `00 01 01 02` exists where
+2 or fewer operand bytes would need to change, so the main version needs
+3 codes either way.
 
 **Revisions:** U only. Others not checked.
 
@@ -25549,8 +25556,10 @@ method. The optional table codes change `TimerTable` itself.
 - Not tested.
 - The time is set only when you enter a level's first room
   (`SublevelCount` = 0), as before. Pipes and doors keep the time left.
-- Levels with 200 (the switch palaces and some others) get 100, about
-  68 seconds (one count is 41 frames).
-- "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`.
-  The main codes read a different table, so with them that code does
-  nothing. The optional table codes conflict with it (same address).
+- One count is 41 frames, so 100 is about 68 seconds and 200 about 2
+  minutes 15 seconds. Long 300 levels may not be possible in time.
+- Levels with 200 (the switch palaces and some others) get 100, so they
+  lose only 100. With the optional codes they have no time limit.
+- "Level timer values (200 -> 900 starting time)" writes `$0584D8`, the
+  same address as the first code, so use only one of them. With the
+  optional codes, it does nothing.
