@@ -25492,3 +25492,86 @@ addresses. Not checked further.
   `LDA DATA_00FE94,Y` operand (`$00FECC`/`$00FECD`, "Fireballs drop
   straight down" and "Mario throws Yoshi fireballs") make these codes do
   nothing.
+
+
+## Every level starts with 100 less time (400 to 300, 300 to 200, 200 to 100)
+
+**Codes:** `4D66-0FF9` + `AC66-0F99` (use both)
+**Raw form:** `058584:20` (orig `$D7`); `058585:CA` (orig `$84`)
+(address:new-byte — the original byte is documentation, not part of the code;
+SNES Game Genie has no compare byte)
+**Optional, 3 codes that change the table instead:** `DF62-D4F9` + `D462-D499` + `D762-D4B9` (`0584D8:01` + `0584D9:02` + `0584DA:03`)
+**Recorded:** 2026-11-15 12:45:07
+
+**Mechanism:** The level loader (`bank_05.asm`) sets the hundreds digit of
+the timer from `TimerTable`, using the top 2 bits of byte 4 of the level
+header:
+
+```
+TimerTable:
+    db $00,$02,$03,$04
+...
+    TAX                                       ; |Get time
+    LDA.W SublevelCount                       ; |
+    BNE +                                     ; |
+    LDA.L TimerTable,X                        ; |
+    STA.W InGameTimerHundreds                 ; |
+```
+
+The codes change the `LDA.L` operand from `$05:84D7` to `$05:CA20`, which
+already holds `00 01 02 03`. So levels with 400 get 300, 300 gets 200 and
+200 gets 100. Index 0 still reads `$00`, so levels without a timer (such as
+Yoshi's House) still have none.
+
+**Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has
+`BF D7 84 05` at `$058583` and `00 01 02 03` at `$05CA20`. Read and
+encoded with `cheats/tools/sgg.py`. No `00 01 02 03` exists where only one
+operand byte would need to change, so 2 codes is the least for this
+method. The optional table codes change `TimerTable` itself.
+
+**Revisions:** U only. Others not checked.
+
+**Caveats:**
+
+- Not tested.
+- The time is set only when you enter a level's first room
+  (`SublevelCount` = 0), as before. Pipes and doors keep the time left.
+- Levels with 200 (the switch palaces and some others) get 100, about
+  68 seconds (one count is 41 frames).
+- "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`.
+  The main codes read a different table, so with them that code does
+  nothing. The optional table codes conflict with it (same address).
+
+## Every level starts with 200 time
+
+**Code:** `9B66-0FF9`
+**Raw form:** `058584:59` (orig `$D7`)
+(address:new-byte — the original byte is documentation, not part of the code;
+SNES Game Genie has no compare byte)
+**Recorded:** 2026-11-15 12:45:07
+
+**Mechanism:** The level loader (`bank_05.asm`) sets the hundreds digit of
+the timer with `LDA.L TimerTable,X`. `TimerTable` is `$00,$02,$03,$04`,
+and X is the top 2 bits of byte 4 of the level header. The code changes
+the low byte of the operand, so it reads `$05:8459` instead of
+`$05:84D7`. That address already holds `00 02 02 02`, so every level with
+a timer starts with 200. Index 0 still reads `$00`, so levels without a
+timer (such as Yoshi's House) still have none.
+
+**Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has
+`BF D7 84 05` at `$058583` and `00 02 02 02` at `$058459`. Read and
+encoded with `cheats/tools/sgg.py`.
+
+**Revisions:** U only. Others not checked.
+
+**Caveats:**
+
+- Not tested.
+- The time is set only when you enter a level's first room
+  (`SublevelCount` = 0), as before. Pipes and doors keep the time left.
+- 200 is about 2 minutes 15 seconds (one count is 41 frames). Long
+  levels may not be possible in time.
+- "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`,
+  which this code no longer reads, so with this code it does nothing.
+- "Every level starts with 100 less time" writes the same address, so use
+  only one of the two.
