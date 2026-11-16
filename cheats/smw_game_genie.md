@@ -25513,8 +25513,9 @@ addresses. Not checked further.
 **Raw form:** `058584:1F` (orig `$D7`); `058585:CA` (orig `$84`)
 (address:new-byte — the original byte is documentation, not part of the code;
 SNES Game Genie has no compare byte)
-**Optional, instead, 3 codes that give levels with 200 a time of 100:** `DF62-D4F9` + `DF62-D499` + `D462-D4B9` (`0584D8:01` + `0584D9:01` + `0584DA:02`)
 **Recorded:** 2026-11-15 12:45:07
+
+Tags: `demo-ready` `play-start` `curated` `challenge`
 
 **Mechanism:** The level loader (`bank_05.asm`) sets the hundreds digit of
 the timer from `TimerTable`, using the top 2 bits of byte 4 of the level
@@ -25538,9 +25539,6 @@ get 100. Levels with 200 get 000. A timer of 000 never counts down
 those levels have no time limit, like Yoshi's House. Index 0 still reads
 `$00`, so levels without a timer still have none.
 
-The optional codes change `TimerTable` itself to `$00,$01,$01,$02`
-instead, so levels with 200 get 100 and keep a time limit.
-
 **Evidence:** `SMW_U.smc` (minus its 512-byte copier header) has
 `BF D7 84 05` at `$058583`, `00 02 03 04` at `$0584D7` (`TimerTable`), and
 `00 00 01 02` at `$05CA1F`. Read and encoded with `cheats/tools/sgg.py`.
@@ -25552,13 +25550,13 @@ instead, so levels with 200 get 100 and keep a time limit.
 
 **Caveats:**
 
-- Not tested.
+- Tested by the user in Mesen2.
 - The time is set only when you enter a level's first room
   (`SublevelCount` = 0), as before. Pipes and doors keep the time left.
 - One count is 41 frames, so 100 is about 68 seconds and 200 about 2
   minutes 15 seconds. Long 300 levels may not be possible in time.
 - Levels with 200 (the switch palaces and some others) show 000 and have
-  no time limit. The optional codes give them 100 instead.
+  no time limit. A 3-code version that changed `TimerTable` to
+  `$00,$01,$01,$02` (so these levels got 100) was removed on 2026-11-15.
 - "Level timer values (200 -> 900 starting time)" changes `TimerTable+1`,
-  which the main codes no longer read, so with them it does nothing. The
-  optional codes write the same address (`$0584D8`), so use only one.
+  which these codes no longer read, so with them it does nothing.
